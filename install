@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 VERSION=v0.26.10
 
 help() {
@@ -21,7 +23,7 @@ install() {
 
   # client
   local tmp_client_file=/tmp/client.tar.gz
-  local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_client.gz"
+  local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_client.tar.gz"
   curl -fSL $client_url -o $tmp_client_file
   cd /tmp
   tar -zxvf $tmp_file >>/dev/null
@@ -30,7 +32,7 @@ install() {
 
   # server
   local tmp_server_file=/tmp/server.tar.gz
-  local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_server.gz"
+  local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_server.tar.gz"
   curl -fSL $server_url -o $tmp_server_file
   cd /tmp
   tar -zxvf $tmp_file >>/dev/null
