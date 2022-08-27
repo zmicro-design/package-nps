@@ -26,7 +26,7 @@ install() {
   local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_client.tar.gz"
   curl -fSL $client_url -o $tmp_client_file
   cd /tmp
-  tar -zxvf $tmp_file >>/dev/null
+  tar -zxvf $tmp_client_file >>/dev/null
   sudo mv npc $bin_path
   rm -rf $tmp_client_file
 
@@ -35,7 +35,7 @@ install() {
   local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_server.tar.gz"
   curl -fSL $server_url -o $tmp_server_file
   cd /tmp
-  tar -zxvf $tmp_file >>/dev/null
+  tar -zxvf $tmp_server_file >>/dev/null
   sudo mv nps $bin_path
   rm -rf $tmp_server_file
 }
