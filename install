@@ -71,7 +71,7 @@ installClient() {
   local bin_file="./$name"
 
   # @TODO not support arm64
-  if [ "$arch" = "arm64" ]; then
+  if [ "$(os::is_macos)" = "true" ] && [ "$arch" = "arm64" ]; then
     arch="amd64"
   fi
 
