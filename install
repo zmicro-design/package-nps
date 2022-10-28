@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 VERSION=v0.26.10
 
 help() {
@@ -10,34 +8,116 @@ help() {
   echo ""
 }
 
-install() {
-  local os="linux"
+installServer() {
+  # prepare vars
+  local name="nps"
+  # get system os/arch
   local arch="$(os::arch)"
-  local bin_path=/usr/bin
+  local kernel="$(os::kernel)"
+  local platform="$(os::platform)"
+  # usr_bin_dir
+  local usr_bin_dir=$(os::usr_bin_dir)
+  local tmp_dir="/tmp/$name"
+  # files
+  local tmp_file="$name.tar.gz"
+  local bin_file="./$name"
 
-  if [ "$(os::is_macos)" = "true" ]; then
-    os="darwin"
-    arch="amd64" # not support arm64, force amd64
-    bin_path=/usr/local/bin
+  # @TODO not support arm64
+  if [ "$arch" = "arm64" ]; then
+    arch="amd64"
   fi
 
-  # client
-  local tmp_client_file=/tmp/client.tar.gz
-  local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_client.tar.gz"
-  curl -fSL $client_url -o $tmp_client_file
-  cd /tmp
-  tar -zxvf $tmp_client_file >>/dev/null
-  sudo mv npc $bin_path
-  rm -rf $tmp_client_file
+  # prepare context
+  mkdir -p $tmp_dir
+  cd $tmp_dir
 
-  # server
-  local tmp_server_file=/tmp/server.tar.gz
-  local server_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_server.tar.gz"
-  curl -fSL $server_url -o $tmp_server_file
-  cd /tmp
-  tar -zxvf $tmp_server_file >>/dev/null
-  sudo mv nps $bin_path
-  rm -rf $tmp_server_file
+  # reference: https://github.com/ehang-io/nps/releases
+  # example:
+  #   https://github.com/ehang-io/nps/releases/download/v0.26.10/darwin_amd64_server.tar.gz
+  #   https://github.com/ehang-io/nps/releases/download/v0.26.10/darwin_amd64_client.tar.gz
+  # generate url
+  local url="https://github.com/ehang-io/nps/releases/download/$VERSION/${platform}_${arch}_server.tar.gz"
+  log::debug "[package][$name][$kernel][$arch] url: $url"
+
+  # download
+  os::curl --progress-bar -fSL $url -o $tmp_file
+  if [ "$?" != "0" ]; then
+    log::error "[$(timestamp)] failed to download server."
+    return 1
+  fi
+
+  # extract
+  tar -zxvf $tmp_file >>/dev/null 2>&1
+
+  # install
+  sudo mv $bin_file $usr_bin_dir
+
+  # clean
+  rm -rf $tmp_dir
+}
+
+installClient() {
+  # prepare vars
+  local name="npc"
+  # get system os/arch
+  local arch="$(os::arch)"
+  local kernel="$(os::kernel)"
+  local platform="$(os::platform)"
+  # usr_bin_dir
+  local usr_bin_dir=$(os::usr_bin_dir)
+  local tmp_dir="/tmp/$name"
+  # files
+  local tmp_file="$name.tar.gz"
+  local bin_file="./$name"
+
+  # @TODO not support arm64
+  if [ "$arch" = "arm64" ]; then
+    arch="amd64"
+  fi
+
+  # prepare context
+  mkdir -p $tmp_dir
+  cd $tmp_dir
+
+  # reference: https://github.com/ehang-io/nps/releases
+  # example:
+  #   https://github.com/ehang-io/nps/releases/download/v0.26.10/darwin_amd64_server.tar.gz
+  #   https://github.com/ehang-io/nps/releases/download/v0.26.10/darwin_amd64_client.tar.gz
+  # generate url
+  local url="https://github.com/ehang-io/nps/releases/download/$VERSION/${platform}_${arch}_client.tar.gz"
+  log::debug "[package][$name][$kernel][$arch] url: $url"
+
+  # download
+  os::curl --progress-bar -fSL $url -o $tmp_file
+  if [ "$?" != "0" ]; then
+    log::error "[$(timestamp)] failed to download client."
+    return 1
+  fi
+
+  # extract
+  tar -zxvf $tmp_file >>/dev/null 2>&1
+
+  # install
+  sudo mv $bin_file $usr_bin_dir
+
+  # clean
+  rm -rf $tmp_dir
+}
+
+install() {
+  log::info "[$(timestamp)] install server ..."
+  installServer
+  if [ "$?" != "0" ]; then
+    log::error "[$(timestamp)] failed to install server."
+    return 1
+  fi
+
+  log::info "[$(timestamp)] install client ..."
+  installClient
+  if [ "$?" != "0" ]; then
+    log::error "[$(timestamp)] failed to install client."
+    return 1
+  fi
 }
 
 core() {
@@ -47,11 +127,28 @@ core() {
   fi
 
   install
-  log::success "install frp success."
+  if [ $? -eq 0 ]; then
+    log::success "install nps success."
+    exit 0
+  else
+    log::error "install nps failed."
+    exit 1
+  fi
 }
 
 run() {
-  core $@
+  core "$@"
 }
 
-run $@
+if [ "$1" = "ONE_LINE" ]; then
+  command -v zmicro # >>/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    curl -o- https://raw.githubusercontent.com/zcorky/zmicro/master/install | sh
+  fi
+
+  zmicro package install nps
+else
+  set -e
+  
+  run "$@"
+fi

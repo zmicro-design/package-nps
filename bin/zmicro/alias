@@ -1,0 +1,49 @@
+#!/bin/bash
+
+help() {
+  echo "Usage:"
+  echo "  zmicro nps <client|server> <args...>"
+  echo ""
+
+  nps --help
+}
+
+version() {
+  nps --version
+}
+
+core() {
+  if [ -z "$1" ]; then
+    help
+    exit 1
+  fi
+
+  case $1 in
+  -h | --help | help)
+    help
+    ;;
+  -v | --version | version)
+    version
+    ;;
+  *)
+    local type=$1
+    local args=${@:2}
+
+    if [ "$type" = "client" ]; then
+      npc $args
+    elif [ "$type" = "server" ]; then
+      nps $args
+    else
+      log::error "unknown type: $type"
+      help
+      exit 1
+    fi
+    ;;
+  esac
+}
+
+run() {
+  core "$@"
+}
+
+run "$@"

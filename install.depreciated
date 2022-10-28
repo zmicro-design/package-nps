@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -e
+
+VERSION=v0.26.10
+
+help() {
+  echo "Usage:"
+  echo "  zmicro package install nps <args...>"
+  echo ""
+}
+
+install() {
+  local os="linux"
+  local arch="$(os::arch)"
+  local bin_path=/usr/bin
+
+  if [ "$(os::is_macos)" = "true" ]; then
+    os="darwin"
+    arch="amd64" # not support arm64, force amd64
+    bin_path=/usr/local/bin
+  fi
+
+  # client
+  local tmp_client_file=/tmp/client.tar.gz
+  local client_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_client.tar.gz"
+  curl -fSL $client_url -o $tmp_client_file
+  cd /tmp
+  tar -zxvf $tmp_client_file >>/dev/null
+  sudo mv npc $bin_path
+  rm -rf $tmp_client_file
+
+  # server
+  local tmp_server_file=/tmp/server.tar.gz
+  local server_url="https://github.com/ehang-io/nps/releases/download/${VERSION}/${os}_${arch}_server.tar.gz"
+  curl -fSL $server_url -o $tmp_server_file
+  cd /tmp
+  tar -zxvf $tmp_server_file >>/dev/null
+  sudo mv nps $bin_path
+  rm -rf $tmp_server_file
+}
+
+core() {
+  if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    help
+    exit 0
+  fi
+
+  install
+  log::success "install frp success."
+}
+
+run() {
+  core $@
+}
+
+run $@
